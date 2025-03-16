@@ -1,0 +1,7 @@
+aiohttp==3.11.13
+fastapi==0.115.11
+pydantic==2.10.6
+pydantic_settings==2.8.1
+pytelegrambotapi==4.26.0
+python-wordpress-xmlrpc==2.3
+uvicorn==0.34.0
