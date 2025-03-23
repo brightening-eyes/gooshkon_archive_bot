@@ -4,4 +4,5 @@ pydantic==2.10.6
 pydantic_settings==2.8.1
 pytelegrambotapi==4.26.0
 beautifulsoup4==4.13.3
+html5lib==1.1
 uvicorn==0.34.0
