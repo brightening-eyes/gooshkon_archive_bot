@@ -1,5 +1,5 @@
 aiohttp==3.11.14
-fastapi==0.115.11
+fastapi==0.115.12
 pydantic==2.10.6
 pydantic_settings==2.8.1
 pytelegrambotapi==4.26.0
