@@ -1,9 +1,10 @@
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
+from settings import settings
 
 async def get_posts(category_slug: str, per_page: int = 100) -> list:
-	base_url = "https://gooshkon.ir"
+	base_url = settings.BASE_URL
 	posts = []
     
 	async with aiohttp.ClientSession() as session:
