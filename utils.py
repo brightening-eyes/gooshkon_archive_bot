@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+from bs4 import BeautifulSoup
 
 async def get_posts(category_slug: str, per_page: int = 100) -> list:
 	base_url = "https://gooshkon.ir"
@@ -35,3 +36,27 @@ async def get_posts(category_slug: str, per_page: int = 100) -> list:
 			print(f"Unexpected error: {str(e)}")
 
 	return posts
+
+async def get_full_post_content(post_url: str) -> str:
+	async with aiohttp.ClientSession() as session:
+		try:
+			async with session.get(post_url) as response:
+				html = await response.text()
+				soup = BeautifulSoup(html, 'html5lib')
+				content_div = soup.find('div', class_='elementor-widget-theme-post-content')            
+				if content_div:
+					widget_container = content_div.find('div', class_='elementor-widget-container')
+
+					for element in widget_container.find_all(class_=['post-ser-css', 'mejs-container', 'wp-audio-shortcode']):
+						element.decompose()
+                
+					for p in widget_container.find_all('p'):
+						if not p.text.strip() or p.text.strip() == '&nbsp;':
+							p.decompose()
+                
+					return str(widget_container)
+
+				return "Content not found"
+		except Exception as e:
+			print(f"Error fetching {post_url}: {e}")
+			return ""
