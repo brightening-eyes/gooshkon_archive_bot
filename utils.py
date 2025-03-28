@@ -1,5 +1,8 @@
-import aiohttp
+import io
+import os
+from urllib.parse import urlparse
 import asyncio
+import aiohttp
 from bs4 import BeautifulSoup
 
 async def get_posts(category_slug: str, per_page: int = 100) -> list:
@@ -60,3 +63,27 @@ async def get_full_post_content(post_url: str) -> str:
 		except Exception as e:
 			print(f"Error fetching {post_url}: {e}")
 			return ""
+
+async def download_to_bytesio(url: str, chunk_size: int = 1024*1024) -> io.BytesIO | None:
+	async with aiohttp.ClientSession() as session:
+		try:
+			async with session.get(url, timeout=aiohttp.ClientTimeout(total=300)) as response:
+				if response.status != 200:
+					return None
+				content_disp = response.headers.get('Content-Disposition', '')
+				filename = next((part.split('=')[1].strip('"') for part in content_disp.split(';') if 'filename=' in part), None) or os.path.basename(urlparse(url).path)
+				filename = (filename.replace("%20", " ").split("?")[0].split("#")[0].strip())
+				file_buffer = io.BytesIO()
+				async for chunk in response.content.iter_chunked(chunk_size):
+					file_buffer.write(chunk)
+
+				file_buffer.filename = filename
+				file_buffer.seek(0)  # Reset buffer position
+				return file_buffer
+
+		except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+			print(f"Download error: {str(e)}")
+			return None
+		except Exception as e:
+			print(f"Unexpected error: {str(e)}")
+			return None
