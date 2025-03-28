@@ -2,10 +2,9 @@ from fastapi import FastAPI, HTTPException
 import uvicorn
 import telebot
 from telebot.async_telebot import AsyncTeleBot
-from settings import Settings
+from settings import settings
 
 app = FastAPI(docs=None, redoc_url=None)
-settings = Settings()
 bot = AsyncTeleBot(f'{settings.BOT_TOKEN}')
 
 @app.post(f'/{settings.BOT_TOKEN}')
