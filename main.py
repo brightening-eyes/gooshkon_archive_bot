@@ -1,19 +1,20 @@
+import asyncio
 from fastapi import FastAPI, HTTPException
 import uvicorn
 import telebot
+from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot import asyncio_filters
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot.states.asyncio.context import StateContext
-from utils import get_posts, get_full_post_content, download_to_bytesio
+from telebot.states.asyncio.middleware import StateMiddleware
 from bs4 import BeautifulSoup
+from utils import get_posts, get_full_post_content, download_to_bytesio
 from settings import settings
 
 app = FastAPI(docs=None, redoc_url=None)
 bot = AsyncTeleBot(f'{settings.BOT_TOKEN}', state_storage=StateMemoryStorage())
-bot.add_custom_filter(asyncio_filters.StateFilter(bot))
-bot.setup_middleware(StateMiddleware(bot))
 
 @app.post(f'/{settings.BOT_TOKEN}')
 async def process_webhook(update: dict):
@@ -59,7 +60,7 @@ async def handle_category(message: types.Message, state: StateContext):
 		await bot.send_message(message.chat.id, "لطفا از گزینه‌های موجود انتخاب کنید")
 		return
 
-	await state.update_data(category_slug=CATEGORIES[category_name])
+	await state.add_data(category_slug=CATEGORIES[category_name])
 	posts = await get_posts(CATEGORIES[category_name])
 
 	if not posts:
@@ -68,7 +69,7 @@ async def handle_category(message: types.Message, state: StateContext):
 		return
     
 	await state.set(PostStates.post_selection)
-	await state.update_data(posts=posts)  # Store posts
+	await state.add_data(posts=posts)  # Store posts
     
 	markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 	buttons = [types.KeyboardButton(f"{i+1}. {p['title']['rendered']}") for i, p in enumerate(posts)]
@@ -79,10 +80,10 @@ async def handle_category(message: types.Message, state: StateContext):
 @bot.message_handler(state=PostStates.post_selection)
 async def handle_post(message: types.Message, state: StateContext):
 	try:
-		data = await state.get_data()
-		posts = data['posts']
-		post_index = int(message.text.split('.')[0]) - 1
-		selected_post = posts[post_index]
+		async with state.data() as data:
+			posts = data['posts']
+			post_index = int(message.text.strip().split('. ')[0]) - 1
+			selected_post = posts[post_index]
 		# Get full content and extract links with descriptions
 		full_content = await get_full_post_content(selected_post['link'])
 		soup = BeautifulSoup(full_content, 'html.parser')
@@ -118,12 +119,16 @@ async def handle_post(message: types.Message, state: StateContext):
 	except (ValueError, IndexError):
 		await bot.send_message(message.chat.id, "لطفا از گزینه‌های موجود انتخاب کنید")
 	except Exception as e:
+		print(e)
 		await bot.send_message(message.chat.id, "خطایی در پردازش پست رخ داد")
 	finally:
 		await state.delete()
 		await bot.send_message(message.chat.id, "برای انتخاب دسته‌بندی جدید /start را بزنید.", reply_markup=types.ReplyKeyboardRemove())
 
 if __name__ == '__main__':
-	bot.remove_webhook()
-	bot.set_webhook(url=f'https://{settings.WEBHOOK_HOST}/{settings.BOT_TOKEN}')
-	uvicorn.run(app, host='0.0.0.0', port=settings.WEBHOOK_PORT)
+	bot.add_custom_filter(asyncio_filters.StateFilter(bot))
+	bot.setup_middleware(StateMiddleware(bot))
+	asyncio.run(bot.polling())
+	#bot.remove_webhook()
+	#bot.set_webhook(url=f'https://{settings.WEBHOOK_HOST}/{settings.BOT_TOKEN}')
+	#uvicorn.run(app, host='0.0.0.0', port=settings.WEBHOOK_PORT)
