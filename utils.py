@@ -78,7 +78,7 @@ async def download_to_bytesio(url: str, chunk_size: int = 1024*1024) -> io.Bytes
 				async for chunk in response.content.iter_chunked(chunk_size):
 					file_buffer.write(chunk)
 
-				file_buffer.filename = filename
+				file_buffer.name = filename
 				file_buffer.seek(0)  # Reset buffer position
 				return file_buffer
 
