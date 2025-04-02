@@ -1,4 +1,4 @@
-aiohttp==3.11.14
+aiohttp==3.11.15
 fastapi==0.115.12
 pydantic==2.10.6
 pydantic_settings==2.8.1
