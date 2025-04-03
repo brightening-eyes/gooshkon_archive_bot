@@ -1,6 +1,6 @@
 aiohttp==3.11.15
 fastapi==0.115.12
-pydantic==2.11.1
+pydantic==2.11.2
 pydantic_settings==2.8.1
 pytelegrambotapi==4.26.0
 beautifulsoup4==4.13.3
