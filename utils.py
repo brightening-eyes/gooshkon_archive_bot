@@ -93,7 +93,7 @@ async def download_to_bytesio(url: str, filename: str, chunk_size: int = 1024*10
 			print(f"Unexpected error: {e}")
 			return None
 
-async def get_file_info(url: str) -> tuple[str, str, str] | None:
+async def extract_filename(url: str) -> tuple[str, str, str] | None:
 	"""Retrieve file metadata (URL, filename, content type) using a HEAD request."""
 	async with aiohttp.ClientSession() as session:
 		try:
@@ -108,7 +108,7 @@ async def get_file_info(url: str) -> tuple[str, str, str] | None:
 			print(f"Error checking {url}: {e}")
 			return None
 
-async def extract_filename(download_links: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
+async def filter_links(download_links: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
 	"""Filter download links to retain only audio and video files."""
 	filtered_links = []
 
@@ -119,7 +119,7 @@ async def extract_filename(download_links: list[tuple[str, str, str]]) -> list[t
 			continue
 
 		# Validate with HEAD request and mimetypes
-		file_info = await get_file_info(url)
+		file_info = await extract_filename(url)
 		if not file_info:
 			continue
 
@@ -135,7 +135,7 @@ async def check_user_membership(client: TelegramClient, user_id: int) -> bool:
 	"""Verify if a user is a member of the specified Telegram channel."""
 	try:
 		print(f"Checking membership for user {user_id} in channel {settings.CHANNEL_USERNAME}")
-		async for participant in client.iter_participants(settings.CHANNEL_USERNAME, limit=2500):
+		async for participant in client.iter_participants(settings.CHANNEL_USERNAME):
 			if participant.id == user_id:
 				print(f"Membership result: True (user {user_id} found in channel)")
 				return True
