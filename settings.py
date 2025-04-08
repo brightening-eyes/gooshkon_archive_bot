@@ -1,23 +1,19 @@
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
-import os
-
-# بارگذاری متغیرهای محیطی از env.dat
-load_dotenv("env.dat")
 
 class Settings(BaseSettings):
-    BOT_TOKEN: str = os.getenv("BOT_TOKEN")
-    API_ID: int = int(os.getenv("API_ID", "0"))  # مقدار پیش‌فرض 0 برای جلوگیری از خطا
-    API_HASH: str = os.getenv("API_HASH", "")
+	# Telegram client ID and hash enabling file uploads beyond 50MB
+	API_ID: int = 0  # Default to 0 if not provided
+	API_HASH: str = ""  # Default to empty string if not provided
+	# Bot authentication token for Telegram API
+	BOT_TOKEN: str
+	# Base URL of the website to scrape posts from
+	BASE_URL: str
+	# The channel users must join to use the bot
+	CHANNEL_USERNAME: str
 
-    GOOSHKON_BOT_USERNAME: str = os.getenv("GOOSHKON_BOT_USERNAME")
-    GOOSHKON_BOT_PASSWORD: str = os.getenv("GOOSHKON_BOT_PASSWORD")
-    BASE_URL: str = "https://gooshkon.ir"
-    WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST")
-    WEBHOOK_PORT: int = int(os.getenv("WEBHOOK_PORT", "8443"))
+	class Config:
+		# Load environment variables directly from env.dat
+		env_file = "env.dat"
 
-    class Config:
-        env_file = "env.dat"  # تعیین فایل env برای بارگذاری
-
-# مقداردهی متغیر settings
+# Instantiate the settings object for use throughout the project
 settings = Settings()
