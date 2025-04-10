@@ -2,7 +2,7 @@ import os
 import asyncio
 from telethon import TelegramClient, events, Button
 from settings import settings
-from utils import get_posts, get_full_post_content, download_to_bytesio, get_file_info, extract_filename, check_user_membership
+from utils import get_posts, get_full_post_content, download_to_bytesio, extract_filename, filter_links, check_user_membership
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import urlparse
@@ -25,6 +25,20 @@ CATEGORIES = {
 
 # User state management (in-memory for now)
 user_states = {}
+
+async def extract_download_links(post_content: str) -> list[tuple[str, str, str]]:
+	"""Extract download links and descriptions from post content."""
+	soup = BeautifulSoup(post_content, 'html.parser')
+	download_links = []
+	allowed_extensions = r'\.(mp3|ogg|wav|mp4|mkv|avi)$'
+	for a in soup.find_all('a', href=True):
+		href = a['href']
+		if href.startswith(('http://', 'https://')) and '#' not in href:
+			filename = os.path.basename(urlparse(href).path)
+			description = a.text.strip() or ""
+			if re.search(allowed_extensions, href, re.IGNORECASE):
+				download_links.append((href, filename, description))
+	return download_links
 
 async def handle_message(event):
 	"""Process incoming messages based on the user's current state."""
@@ -108,26 +122,15 @@ async def handle_message(event):
 			selected_post = user_states[chat_id]["posts"][post_index]
 			full_content = await get_full_post_content(selected_post['link'])
 
-			soup = BeautifulSoup(full_content, 'html.parser')
-			# Extract links as triplets (URL, filename, description)
-			download_links = []
-			allowed_extensions = r'\.(mp3|ogg|wav|mp4|mkv|avi)$'
-			for a in soup.find_all('a', href=True):
-				href = a['href']
-				if href.startswith(('http://', 'https://')) and '#' not in href:
-					filename = os.path.basename(urlparse(href).path)
-					description = a.text.strip() or ""
-					if re.search(allowed_extensions, href, re.IGNORECASE):
-						download_links.append((href, filename, description))
-
+			# Extract and filter download links
+			download_links = await extract_download_links(full_content)
 			if not download_links:
 				await event.respond("هیچ لینک قابل دانلودی در این پست یافت نشد.")
 				user_states.pop(chat_id, None)
 				return
 
-			# Filter audio and video links
 			print(f"Filtering {len(download_links)} download links for media files")
-			filtered_links = await extract_filename(download_links)
+			filtered_links = await filter_links(download_links)
 			if not filtered_links:
 				await event.respond("هیچ فایل رسانه‌ای معتبری در این پست یافت نشد.")
 				user_states.pop(chat_id, None)
