@@ -191,7 +191,7 @@ async def check_user_membership(client: TelegramClient, user_id: int) -> bool:
 
 async def extract_download_links(post_content: str) -> list[tuple[str, str, str]]:
 	"""Extract download links and descriptions from post content."""
-	soup = BeautifulSoup(post_content, 'html.parser')
+	soup = BeautifulSoup(post_content, 'html5lib')
 	download_links = []
 	allowed_extensions = r'\.(mp3|ogg|wav|mp4|mkv|avi|rar|zip)$'
 	for a in soup.find_all('a', href=True):
