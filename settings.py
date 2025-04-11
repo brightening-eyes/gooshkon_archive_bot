@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
 	class Config:
 		# Load environment variables directly from env.dat
-		env_file = "env.dat"
+		env_file = ".env"
 
 # Instantiate the settings object for use throughout the project
 settings = Settings()
