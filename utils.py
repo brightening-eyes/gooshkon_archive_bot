@@ -1,3 +1,4 @@
+"""utility functions"""
 import io
 import os
 from urllib.parse import urlparse
@@ -11,6 +12,7 @@ import re
 
 mimetypes.init()
 
+# coded by Amir Ramezani
 async def get_posts(category_slug: str, per_page: int = 100) -> list:
 	"""Retrieve posts from a specific category via the WordPress JSON API."""
 	base_url = settings.BASE_URL
@@ -26,7 +28,9 @@ async def get_posts(category_slug: str, per_page: int = 100) -> list:
 				category_id = categories[0]['id']
 				total_posts = categories[0]['count']
 
+			# wordpress returns the posts in a paginated form.
 			total_pages = (total_posts + per_page - 1) // per_page
+			# retreive posts together in an async form.
 			tasks = [
 				session.get(f"{base_url}/wp-json/wp/v2/posts", params={
 					"categories": category_id,
@@ -37,6 +41,7 @@ async def get_posts(category_slug: str, per_page: int = 100) -> list:
 			]
 			responses = await asyncio.gather(*tasks)
 
+			# extract from the responces into the given posts list.
 			for response in responses:
 				if response.status == 200:
 					posts.extend(await response.json())
@@ -50,6 +55,7 @@ async def get_posts(category_slug: str, per_page: int = 100) -> list:
 
 		return posts
 
+# coded by Amir Ramezani, modified by hossein Peimani.
 async def get_full_content(post_url: str, is_textbook: bool = False) -> tuple[str, list]:
 	"""Fetch full content of a post, with special handling for textbooks."""
 	async with aiohttp.ClientSession() as session:
@@ -58,6 +64,7 @@ async def get_full_content(post_url: str, is_textbook: bool = False) -> tuple[st
 				html = await response.text()
 				soup = BeautifulSoup(html, 'html5lib')
 
+				# handle textbooks and retreive the links
 				if is_textbook:
 					body = soup.find('body')
 					if not body:
@@ -99,6 +106,8 @@ async def get_full_content(post_url: str, is_textbook: bool = False) -> tuple[st
 
 					filtered_items = [item for item in items if item["links"]]
 					return "", filtered_items if filtered_items else []
+
+				# parse post case
 				else:
 					content_div = soup.find('div', class_='elementor-widget-theme-post-content')
 					if not content_div:
@@ -116,6 +125,7 @@ async def get_full_content(post_url: str, is_textbook: bool = False) -> tuple[st
 			print(f"Error fetching {post_url}: {e}")
 			return "", []
 
+# coded by Amir Ramezani
 async def download_to_bytesio(url: str, filename: str, chunk_size: int = 1024*1024) -> io.BytesIO | None:
 	"""Download a file from a URL into a BytesIO buffer asynchronously."""
 	async with aiohttp.ClientSession() as session:
@@ -136,6 +146,7 @@ async def download_to_bytesio(url: str, filename: str, chunk_size: int = 1024*10
 			print(f"Unexpected error: {e}")
 			return None
 
+# coded by Hossein Peimani
 async def extract_filename(url: str) -> tuple[str, str, str] | None:
 	"""Retrieve file metadata (URL, filename, content type) using a HEAD request."""
 	async with aiohttp.ClientSession() as session:
@@ -151,6 +162,7 @@ async def extract_filename(url: str) -> tuple[str, str, str] | None:
 			print(f"Error checking {url}: {e}")
 			return None
 
+# coded by Hossein Peimani
 async def filter_links(download_links: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
 	"""Filter download links to retain only audio, video, or archive files."""
 	filtered_links = []
@@ -172,6 +184,7 @@ async def filter_links(download_links: list[tuple[str, str, str]]) -> list[tuple
 
 	return filtered_links
 
+# coded by Hossein Peimani
 async def check_user_membership(client: TelegramClient, user_id: int) -> bool:
 	"""Verify if a user is a member of the specified Telegram channel."""
 	try:
@@ -189,6 +202,7 @@ async def check_user_membership(client: TelegramClient, user_id: int) -> bool:
 			print(f"Error checking membership for user {user_id}: {e}")
 		return False
 
+# coded by Amir Ramezani, turned into a function by Hossein Peimani
 async def extract_download_links(post_content: str) -> list[tuple[str, str, str]]:
 	"""Extract download links and descriptions from post content."""
 	soup = BeautifulSoup(post_content, 'html5lib')
