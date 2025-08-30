@@ -186,6 +186,7 @@ async def filter_links(download_links: list[tuple[str, str, str]]) -> list[tuple
 
 # coded by Hossein Peimani
 async def check_user_membership(client: TelegramClient, user_id: int) -> bool:
+	return True # For  deactivating the feature
 	"""Verify if a user is a member of the specified Telegram channel."""
 	try:
 		print(f"Checking membership for user {user_id} in channel {settings.CHANNEL_USERNAME}")
