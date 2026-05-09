@@ -1,6 +1,6 @@
 aiohttp==3.13.5
 pydantic==2.13.4
-pydantic_settings==2.14.0
+pydantic_settings==2.14.1
 telethon==1.43.2
 beautifulsoup4==4.14.3
 html5lib==1.1
