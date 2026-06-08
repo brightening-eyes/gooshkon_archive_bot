@@ -1,4 +1,4 @@
-aiohttp==3.13.5
+aiohttp==3.14.1
 pydantic==2.13.4
 pydantic_settings==2.14.1
 telethon==1.43.2
